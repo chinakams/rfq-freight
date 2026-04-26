@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Submit Quote / 提交报价</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: sans-serif; background: #f5f5f5; padding: 24px; }
+    .card { background: white; border-radius: 12px; padding: 24px; max-width: 600px; margin: 0 auto; }
+    h2 { font-size: 18px; margin-bottom: 4px; }
+    .sub { font-size: 13px; color: #888; margin-bottom: 24px; }
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .g1 { margin-bottom: 12px; }
+    label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+    .zh { font-size: 11px; color: #888; display: block; }
+    input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 14px; }
+    textarea { height: 72px; resize: vertical; }
+    button { width: 100%; padding: 12px; background: #16a34a; color: white; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; margin-top: 8px; }
+    .pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 20px; }
+    .pill { font-size: 12px; background: #f3f4f6; border-radius: 20px; padding: 4px 12px; color: #666; }
+    .success { text-align: center; padding: 40px 20px; display: none; }
+    .success h2 { color: #16a34a; margin-bottom: 8px; }
+  </style>
+</head>
+<body>
+  <div class="card" id="form-card">
+    <h2>Submit Your Quote</h2>
+    <p class="sub">提交报价 — Please fill in your freight quote below</p>
+    <div class="pills" id="rfq-pills"></div>
+    <div class="g2">
+      <div><label>Total Price (USD) <span class="zh">总价（美元）</span></label><input type="number" id="price" placeholder="320"></div>
+      <div><label>Transit Time (days) <span class="zh">运输时间（天）</span></label><input type="number" id="transit" placeholder="5"></div>
+    </div>
+    <div class="g2">
+      <div><label>Courier <span class="zh">快递公司</span></label>
+        <select id="courier"><option>FedEx</option><option>DHL</option><option>UPS</option><option>Other</option></select>
+      </div>
+      <div><label>Service Level <span class="zh">服务等级</span></label>
+        <select id="service"><option>Express / 快件</option><option>Economy / 经济</option><option>Standard / 标准</option></select>
+      </div>
+    </div>
+    <div class="g2">
+      <div><label>Insurance <span class="zh">保险</span></label>
+        <select id="insurance"><option>No / 不含</option><option>Yes / 含</option><option>Optional / 可选</option></select>
+      </div>
+      <div><label>Customs Clearance <span class="zh">清关</span></label>
+        <select id="customs"><option>No / 不含</option><option>Yes / 含</option><option>Optional / 可选</option></select>
+      </div>
+    </div>
+    <div class="g1">
+      <label>Remarks / Terms <span class="zh">备注/条款</span></label>
+      <textarea id="remarks" placeholder="Payment terms, validity, additional services..."></textarea>
+    </div>
+    <button onclick="submitQuote()">Submit Quote / 提交报价</button>
+  </div>
+  <div class="card success" id="success-card">
+    <h2>Quote Submitted!</h2>
+    <p style="color:#888">提交成功 — Thank you. We will be in touch.</p>
+  </div>
+  <script>
+    const token = new URLSearchParams(window.location.search).get('token');
+    async function loadRFQ() {
+      if (!token) return;
+      const res = await fetch('/.netlify/functions/get-rfq?token=' + token);
+      const data = await res.json();
+      if (!data.rfq) return;
+      const rfq = data.rfq;
+      const pills = document.getElementById('rfq-pills');
+      pills.innerHTML = [rfq.description, rfq.origin + ' → ' + rfq.destination, 'Air Freight', rfq.qty + ' ctns', 'Deadline: ' + rfq.deadline]
+        .map(t => '<span class="pill">' + t + '</span>').join('');
+    }
+    async function submitQuote() {
+      if (!token) return alert('Invalid link.');
+      const body = {
+        token,
+        price: document.getElementById('price').value,
+        transit_days: document.getElementById('transit').value,
+        courier: document.getElementById('courier').value,
+        service_level: document.getElementById('service').value,
+        insurance: document.getElementById('insurance').value,
+        customs: document.getElementById('customs').value,
+        remarks: document.getElementById('remarks').value
+      };
+      const res = await fetch('/.netlify/functions/submit-quote', { method: 'POST', body: JSON.stringify(body) });
+      if (res.ok) {
+        document.getElementById('form-card').style.display = 'none';
+        document.getElementById('success-card').style.display = 'block';
+      } else {
+        alert('Something went wrong. Please try again.');
+      }
+    }
+    loadRFQ();
+  </script>
+</body>
+</html>
