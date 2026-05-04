@@ -1,83 +1,328 @@
-const { createClient } = require('@supabase/supabase-js');
-const { Resend } = require('resend');
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_ANON_KEY
-);
-const resend = new Resend(process.env.RESEND_API_KEY);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RFQ Freight System</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:sans-serif;background:#f5f5f5;padding:20px}
+    .wrap{max-width:700px;margin:0 auto}
+    .card{background:white;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #e5e7eb}
+    .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+    .g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:12px}
+    .g1{margin-bottom:12px}
+    label{display:block;margin-bottom:3px}
+    .en{font-size:13px;font-weight:500;color:#111;display:block}
+    .zh{font-size:11px;color:#888;display:block}
+    input,select,textarea{width:100%;padding:8px 10px;border:1px solid #ddd;border-radius:8px;font-size:14px}
+    textarea{height:72px;resize:vertical}
+    .tabs{display:flex;border-bottom:1px solid #e5e7eb;margin-bottom:20px}
+    .tab{flex:1;text-align:center;padding:10px;cursor:pointer;border-bottom:2px solid transparent;font-size:13px;color:#888}
+    .tab.on{border-bottom-color:#2563eb;color:#2563eb;font-weight:500}
+    .mtab{flex:1;padding:10px;text-align:center;border:1px solid #ddd;border-radius:8px;cursor:pointer;background:#f9f9f9;margin-right:8px}
+    .mtab:last-child{margin-right:0}
+    .mtab.on{border-color:#2563eb;background:#eff6ff}
+    .mtab .e{font-size:13px;font-weight:500;color:#111}
+    .mtab.on .e{color:#2563eb}
+    .mtab .z{font-size:11px;color:#888}
+    .ctab{flex:1;padding:9px;text-align:center;border:1px solid #ddd;border-radius:8px;cursor:pointer;background:#f9f9f9;margin-right:8px}
+    .ctab:last-child{margin-right:0}
+    .ctab.on{border-color:#2563eb;background:#eff6ff}
+    .ctab .e{font-size:13px;font-weight:500}
+    .ctab.on .e{color:#2563eb}
+    .ctab .z{font-size:11px;color:#888}
+    .totbar{background:#f3f4f6;border-radius:8px;padding:10px 14px;display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px;font-size:13px}
+    .totbar span{color:#666}.totbar b{color:#111}
+    .srow{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+    .srow input{flex:1}
+    .rm{background:none;border:none;color:#aaa;cursor:pointer;font-size:20px;padding:0 4px}
+    .btn{padding:10px 20px;border-radius:8px;border:1px solid #ddd;background:white;cursor:pointer;font-size:14px}
+    .btn-primary{background:#2563eb;color:white;border-color:#2563eb}
+    .btn-success{background:#16a34a;color:white;border-color:#16a34a}
+    .stitle .e{font-size:14px;font-weight:600;color:#111}
+    .stitle .z{font-size:12px;color:#888;margin-left:6px}
+    .divl{font-size:11px;color:#888;border-bottom:1px solid #e5e7eb;padding-bottom:4px;margin:4px 0 12px}
+    .info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 14px;font-size:12px;color:#1d4ed8;margin-bottom:16px}
+    .sc{display:none}.sc.on{display:block}
+    .pill{font-size:12px;background:#f3f4f6;border-radius:20px;padding:4px 12px;display:inline-block;margin:0 4px 6px 0;color:#666}
+    .trow{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #e5e7eb}
+    .trow:last-child{border-bottom:none}
+    .bwait{font-size:11px;padding:3px 10px;border-radius:20px;background:#fef3c7;color:#92400e;display:inline-block}
+    .tbl{width:100%;border-collapse:collapse;font-size:12px}
+    .tbl th{font-size:11px;font-weight:500;color:#888;padding:7px 8px;background:#f9f9f9;text-align:left;border-bottom:1px solid #e5e7eb;white-space:nowrap}
+    .tbl td{padding:9px 8px;border-bottom:1px solid #e5e7eb;color:#111;vertical-align:top}
+    .tbl tr.best td{background:#f0fdf4;color:#166534}
+    .sending{text-align:center;padding:30px;display:none}
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div style="margin-bottom:20px"><h1 style="font-size:20px;font-weight:600">RFQ Freight System</h1><p style="font-size:13px;color:#888">Request for Quotation — Air & Sea / 询价系统</p></div>
 
-exports.handler = async (event) => {
-  if (event.httpMethod !== 'POST') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+  <div class="tabs">
+    <div class="tab on" id="t1" onclick="go(1)"><div>1 · RFQ</div><div style="font-size:11px;color:#aaa">询价</div></div>
+    <div class="tab" id="t2" onclick="go(2)"><div>2 · Track</div><div style="font-size:11px;color:#aaa">跟踪</div></div>
+    <div class="tab" id="t3" onclick="go(3)"><div>3 · Compare</div><div style="font-size:11px;color:#aaa">比较</div></div>
+  </div>
+
+  <!-- SCREEN 1 -->
+  <div class="sc on" id="sc1">
+    <div class="card">
+      <p class="stitle" style="margin-bottom:12px"><span class="e">Shipping Mode</span><span class="z">/ 运输方式</span></p>
+      <div style="display:flex">
+        <div class="mtab on" id="m-air" onclick="setMode('air')"><div class="e">Air Freight</div><div class="z">空运</div></div>
+        <div class="mtab" id="m-sea" onclick="setMode('sea')"><div class="e">Sea Freight</div><div class="z">海运</div></div>
+      </div>
+    </div>
+
+    <div id="air-sec">
+      <div class="info">Origin is always the shipper's warehouse / 起运地始终为发货人仓库</div>
+      <div class="card">
+        <p class="stitle" style="margin-bottom:12px"><span class="e">Cargo Details</span><span class="z">/ 货物详情</span></p>
+        <div class="g1"><label><span class="en">Contents / Description</span><span class="zh">货物内容/描述</span></label><input id="a-desc" placeholder="e.g. Electronic components / 电子元件"></div>
+        <div class="divl">Carton dimensions / 纸箱尺寸</div>
+        <div class="g3">
+          <div><label><span class="en">Length (cm)</span><span class="zh">长</span></label><input type="number" id="a-l" placeholder="40" oninput="calc()"></div>
+          <div><label><span class="en">Width (cm)</span><span class="zh">宽</span></label><input type="number" id="a-w" placeholder="30" oninput="calc()"></div>
+          <div><label><span class="en">Height (cm)</span><span class="zh">高</span></label><input type="number" id="a-h" placeholder="25" oninput="calc()"></div>
+        </div>
+        <div class="g2">
+          <div><label><span class="en">Weight / carton (kg)</span><span class="zh">每箱重量</span></label><input type="number" id="a-wpc" placeholder="5" step="0.1" oninput="calc()"></div>
+          <div><label><span class="en">Number of cartons</span><span class="zh">纸箱数量</span></label><input type="number" id="a-qty" placeholder="20" oninput="calc()"></div>
+        </div>
+        <div class="totbar" id="totbar" style="display:none">
+          <span>Total weight / 总重: <b id="tw">—</b></span>
+          <span>Total CBM / 总体积: <b id="tcbm">—</b></span>
+          <span>Chargeable / 计费重: <b id="tcw">—</b></span>
+        </div>
+      </div>
+      <div class="card">
+        <p class="stitle" style="margin-bottom:12px"><span class="e">Route</span><span class="z">/ 路线</span></p>
+        <div class="g2">
+          <div><label><span class="en">Shipper city / Warehouse</span><span class="zh">发货城市/仓库</span></label><input id="a-orig" placeholder="e.g. Shenzhen / 深圳"></div>
+          <div><label><span class="en">Delivery address</span><span class="zh">送货地址</span></label><input id="a-dest" placeholder="12 HaBar St, Tel Aviv"></div>
+        </div>
+        <div class="g2">
+          <div><label><span class="en">Shipping Terms</span><span class="zh">运输条款</span></label>
+            <select id="a-terms">
+              <option value="">Select / 选择...</option>
+              <option value="EXW">EXW – Ex Works / 工厂交货</option>
+              <option value="FCA">FCA – Free Carrier / 货交承运人</option>
+              <option value="DAP">DAP – Delivered at Place / 目的地交货</option>
+              <option value="DDP">DDP – Delivered Duty Paid / 完税后交货</option>
+            </select>
+          </div>
+          <div><label><span class="en">Cargo Ready Date</span><span class="zh">货物备妥日期</span></label><input type="date" id="a-ready"></div>
+        </div>
+        <div class="g1"><label><span class="en">Quote Deadline</span><span class="zh">报价截止日期</span></label><input type="date" id="a-ddl"></div>
+      </div>
+      <div class="card">
+        <p class="stitle" style="margin-bottom:12px"><span class="e">Preferred Couriers</span><span class="z">/ 首选快递</span></p>
+        <div style="display:flex">
+          <div class="ctab" id="c-fedex" onclick="togC('fedex')"><div class="e">FedEx</div><div class="z">联邦快递</div></div>
+          <div class="ctab" id="c-dhl" onclick="togC('dhl')"><div class="e">DHL</div><div class="z">敦豪快递</div></div>
+          <div class="ctab" id="c-ups" onclick="togC('ups')"><div class="e">UPS</div><div class="z">优比速</div></div>
+          <div class="ctab" id="c-any" onclick="togC('any')"><div class="e">Any</div><div class="z">不限</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <p class="stitle" style="margin-bottom:12px"><span class="e">Additional Notes</span><span class="z">/ 附加说明</span></p>
+        <textarea id="a-notes" placeholder="Lithium batteries, hazmat, insurance... / 锂电池、危险品、保险..."></textarea>
+      </div>
+    </div>
+
+    <div id="sea-sec" style="display:none">
+      <div class="card">
+        <p class="stitle" style="margin-bottom:12px"><span class="e">Shipment Details</span><span class="z">/ 货运详情</span></p>
+        <div class="g1"><label><span class="en">Goods Description</span><span class="zh">货物描述</span></label><input id="s-goods" placeholder="e.g. Clothing / 服装"></div>
+        <div class="g2">
+          <div><label><span class="en">Gross Weight (kg)</span><span class="zh">毛重</span></label><input type="number" id="s-wt" placeholder="500"></div>
+          <div><label><span class="en">Volume (CBM)</span><span class="zh">体积</span></label><input type="number" id="s-cbm" placeholder="3.5" step="0.1"></div>
+        </div>
+        <div class="g2">
+          <div><label><span class="en">Origin City</span><span class="zh">起运城市</span></label><input id="s-orig" placeholder="Shenzhen / 深圳"></div>
+          <div><label><span class="en">Destination Port</span><span class="zh">目的港</span></label><input id="s-dest" placeholder="Haifa / 海法港"></div>
+        </div>
+        <div class="g2">
+          <div><label><span class="en">Mode</span><span class="zh">方式</span></label>
+            <select id="s-mode"><option value="">Select...</option><option value="Sea FCL">Sea FCL – 整箱</option><option value="Sea LCL">Sea LCL – 拼箱</option></select>
+          </div>
+          <div><label><span class="en">Incoterms</span><span class="zh">贸易术语</span></label>
+            <select id="s-inc"><option value="">Select...</option><option>FOB</option><option>EXW</option><option>CIF</option><option>DDP</option></select>
+          </div>
+        </div>
+        <div class="g2">
+          <div><label><span class="en">Cargo Ready Date</span><span class="zh">货物备妥日期</span></label><input type="date" id="s-ready"></div>
+          <div><label><span class="en">Quote Deadline</span><span class="zh">报价截止日期</span></label><input type="date" id="s-ddl"></div>
+        </div>
+        <div class="g1"><label><span class="en">Additional Notes</span><span class="zh">附加说明</span></label><textarea id="s-notes" placeholder="Insurance, hazmat... / 保险、危险品..."></textarea></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="stitle" style="margin-bottom:12px"><span class="e">Freight Forwarders</span><span class="z">/ 货运代理</span></p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 28px;gap:8px;margin-bottom:6px">
+        <span style="font-size:11px;color:#888">Name / 姓名</span>
+        <span style="font-size:11px;color:#888">Email</span><span></span>
+      </div>
+      <div id="suplist">
+        <div class="srow"><input placeholder="Forwarder A / 货代A" class="sn"><input type="email" placeholder="agent@example.com" class="se"><button class="rm" onclick="rmS(this)">×</button></div>
+        <div class="srow"><input placeholder="Forwarder B / 货代B" class="sn"><input type="email" placeholder="agent@example.com" class="se"><button class="rm" onclick="rmS(this)">×</button></div>
+      </div>
+      <button class="btn" onclick="addS()" style="margin-top:8px;font-size:13px">+ Add forwarder / 添加货代</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-bottom:20px">
+      <button class="btn btn-primary" onclick="sendRFQ()" style="flex:1;padding:12px">Send to all forwarders / 发送给所有货代 ↗</button>
+    </div>
+    <div class="sending" id="sending"><p style="font-size:16px;color:#2563eb">Sending emails... / 发送中...</p></div>
+  </div>
+
+  <!-- SCREEN 2 -->
+  <div class="sc" id="sc2">
+    <div class="card">
+      <p class="stitle" style="margin-bottom:12px"><span class="e">RFQ Sent</span><span class="z">/ 询价已发送</span></p>
+      <div style="margin-bottom:1rem" id="tpills"></div>
+      <div id="tlist"></div>
+    </div>
+    <button class="btn" onclick="go(1)" style="width:100%;margin-bottom:10px">New RFQ / 新询价</button>
+  </div>
+
+  <!-- SCREEN 3 -->
+  <div class="sc" id="sc3">
+    <div class="card">
+      <p class="stitle" style="margin-bottom:12px"><span class="e">Quote Comparison</span><span class="z">/ 报价比较</span></p>
+      <div style="margin-bottom:1rem" id="cpills"></div>
+      <div style="overflow-x:auto">
+        <table class="tbl"><thead><tr id="chead"></tr></thead><tbody id="cbody"></tbody></table>
+      </div>
+      <p style="font-size:12px;color:#888;margin-top:12px">Forwarder names hidden from each other. You see all. / 货代互不知晓。仅您可见全部报价。</p>
+    </div>
+    <button class="btn" onclick="go(1)" style="width:100%">New RFQ / 新询价</button>
+  </div>
+</div>
+
+<script>
+var mode='air', couriers=new Set();
+
+function go(n){
+  for(var i=1;i<=3;i++){
+    document.getElementById('sc'+i).className='sc'+(i===n?' on':'');
+    document.getElementById('t'+i).className='tab'+(i===n?' on':'');
+  }
+}
+
+function setMode(m){
+  mode=m;
+  document.getElementById('m-air').className='mtab'+(m==='air'?' on':'');
+  document.getElementById('m-sea').className='mtab'+(m==='sea'?' on':'');
+  document.getElementById('air-sec').style.display=m==='air'?'block':'none';
+  document.getElementById('sea-sec').style.display=m==='sea'?'block':'none';
+}
+
+function togC(c){
+  var el=document.getElementById('c-'+c);
+  if(c==='any'){
+    couriers.clear();couriers.add('any');
+    ['fedex','dhl','ups'].forEach(function(x){document.getElementById('c-'+x).className='ctab';});
+    el.className='ctab on';
+  } else {
+    document.getElementById('c-any').className='ctab';
+    couriers.delete('any');
+    if(couriers.has(c)){couriers.delete(c);el.className='ctab';}
+    else{couriers.add(c);el.className='ctab on';}
+  }
+}
+
+function calc(){
+  var l=+document.getElementById('a-l').value||0;
+  var w=+document.getElementById('a-w').value||0;
+  var h=+document.getElementById('a-h').value||0;
+  var wpc=+document.getElementById('a-wpc').value||0;
+  var qty=+document.getElementById('a-qty').value||0;
+  if(!qty||!wpc){document.getElementById('totbar').style.display='none';return;}
+  var tw=(wpc*qty).toFixed(1);
+  var cbm=((l*w*h/1000000)*qty).toFixed(3);
+  var vw=((l*w*h/1000000)*qty*167).toFixed(1);
+  var cw=Math.max(+tw,+vw).toFixed(1);
+  document.getElementById('tw').textContent=tw+' kg';
+  document.getElementById('tcbm').textContent=cbm+' m³';
+  document.getElementById('tcw').textContent=cw+' kg';
+  document.getElementById('totbar').style.display='flex';
+}
+
+function addS(){
+  var d=document.createElement('div');d.className='srow';
+  d.innerHTML='<input placeholder="Forwarder / 货代" class="sn"><input type="email" placeholder="email" class="se"><button class="rm" onclick="rmS(this)">×</button>';
+  document.getElementById('suplist').appendChild(d);
+}
+function rmS(b){if(document.querySelectorAll('.srow').length>1)b.parentElement.remove();}
+function getSups(){return Array.from(document.querySelectorAll('.srow')).map(function(r){return{name:r.querySelector('.sn').value||'Forwarder',email:r.querySelector('.se').value||''};});}
+
+async function sendRFQ(){
+  var sups=getSups();
+  var rfq={};
+
+  if(mode==='air'){
+    rfq={
+      mode:'air',
+      description:document.getElementById('a-desc').value,
+      qty:document.getElementById('a-qty').value,
+      weight_per_carton:document.getElementById('a-wpc').value,
+      length:document.getElementById('a-l').value,
+      width:document.getElementById('a-w').value,
+      height:document.getElementById('a-h').value,
+      origin:document.getElementById('a-orig').value,
+      destination:document.getElementById('a-dest').value,
+      terms:document.getElementById('a-terms').value,
+      couriers:Array.from(couriers).join(', ')||'Any',
+      ready_date:document.getElementById('a-ready').value,
+      deadline:document.getElementById('a-ddl').value,
+      notes:document.getElementById('a-notes').value
+    };
+  } else {
+    rfq={
+      mode:'sea',
+      description:document.getElementById('s-goods').value,
+      origin:document.getElementById('s-orig').value,
+      destination:document.getElementById('s-dest').value,
+      terms:document.getElementById('s-inc').value,
+      ready_date:document.getElementById('s-ready').value,
+      deadline:document.getElementById('s-ddl').value,
+      notes:document.getElementById('s-notes').value
+    };
   }
 
-  const data = JSON.parse(event.body);
-  const { token, price, transit_days, courier, service_level, insurance, customs, remarks } = data;
+  document.getElementById('sending').style.display='block';
 
-  const { data: supplier, error } = await supabase
-    .from('suppliers')
-    .select('*, rfqs(*)')
-    .eq('token', token)
-    .single();
-
-  if (error || !supplier) {
-    return { statusCode: 404, body: JSON.stringify({ error: 'Token not found' }) };
-  }
-
-  await supabase
-    .from('suppliers')
-    .update({ price, transit_days, courier, service_level, insurance, customs, remarks, status: 'submitted', submitted_at: new Date() })
-    .eq('token', token);
-
-  const { data: allSuppliers } = await supabase
-    .from('suppliers')
-    .select('*')
-    .eq('rfq_id', supplier.rfq_id);
-
-  const allSubmitted = allSuppliers.every(s => s.status === 'submitted');
-
-  if (allSubmitted) {
-    const sorted = [...allSuppliers].sort((a, b) => a.price - b.price);
-    const best = sorted[0];
-
-    const rows = sorted.map((s, i) => `
-      <tr style="background:${i === 0 ? '#f0fdf4' : 'white'}">
-        <td style="padding:8px;border-bottom:1px solid #eee">${i === 0 ? '★ ' : ''}Forwarder ${i + 1}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee"><b>$${s.price}</b></td>
-        <td style="padding:8px;border-bottom:1px solid #eee">${s.transit_days} days</td>
-        <td style="padding:8px;border-bottom:1px solid #eee">${s.courier || '—'}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee">${s.service_level || '—'}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee">${s.insurance}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee">${s.customs}</td>
-        <td style="padding:8px;border-bottom:1px solid #eee;font-size:12px;color:#666">${s.remarks || '—'}</td>
-      </tr>`).join('');
-
-    await resend.emails.send({
-      from: 'RFQ System <onboarding@resend.dev>',
-      to: process.env.YOUR_EMAIL,
-      subject: `All quotes received – RFQ #${supplier.rfq_id}`,
-      html: `
-        <div style="font-family:sans-serif;max-width:700px;margin:0 auto;padding:20px">
-          <h2>All quotes received</h2>
-          <p>Best price: <b>$${best.price}</b> — ${best.transit_days} days</p>
-          <table style="width:100%;border-collapse:collapse;margin:16px 0">
-            <thead><tr style="background:#f8f8f8">
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Forwarder</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Price</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Days</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Courier</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Service</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Insurance</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Customs</th>
-              <th style="padding:8px;text-align:left;border-bottom:1px solid #eee">Remarks</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-          <p style="color:#999;font-size:12px">Forwarder names are hidden to protect confidentiality.</p>
-        </div>`
+  try {
+    const res = await fetch('https://script.google.com/macros/s/AKfycbzdcSJnIuiWInhz5SA91mbUlVaOymj4JCu3o0QWHVu13JhQPYEO2ErSSibufJpcr8uX/exec', {
+      method:'POST',
+      body:JSON.stringify({rfq, suppliers:sups})
     });
-  }
+    const data = await res.json();
 
-  return { statusCode: 200, body: JSON.stringify({ success: true }) };
-};
+    document.getElementById('sending').style.display='none';
+
+    var pills='<span class="pill">'+(rfq.description||'Cargo')+'</span><span class="pill">'+(rfq.origin||'—')+' → '+(rfq.destination||'—')+'</span><span class="pill">'+(mode==='air'?'Air 空运':'Sea 海运')+'</span>';
+    document.getElementById('tpills').innerHTML=pills;
+
+    var tl=document.getElementById('tlist');tl.innerHTML='';
+    sups.forEach(function(s){
+      var r=document.createElement('div');r.className='trow';
+      r.innerHTML='<div><div style="font-size:13px;font-weight:500">'+s.name+'</div><div style="font-size:12px;color:#888">'+s.email+'</div></div><span class="bwait">Email sent / 已发送</span>';
+      tl.appendChild(r);
+    });
+    go(2);
+  } catch(e) {
+    document.getElementById('sending').style.display='none';
+    alert('Error sending emails. Check your configuration.');
+  }
+}
+
+setMode('air');
+</script>
+</body>
+</html>
