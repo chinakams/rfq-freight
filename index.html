@@ -300,7 +300,7 @@ async function sendRFQ(){
   try {
     const formData = new FormData();
     formData.append('data', JSON.stringify({rfq, suppliers:sups}));
-    const res = await fetch('https://script.google.com/macros/s/AKfycbzdcSJnIuiWInhz5SA91mbUlVaOymj4JCu3o0QWHVu13JhQPYEO2ErSSibufJpcr8uX/exec', {
+    const res = await fetch('https://script.google.com/macros/s/AKfycbyOCwPF12Nf_gMm_TR7EwbkqeV4Bo_x8qqz-yV3e8dZe9RD8n17t-IXoTpGlzEy3FHQ/exec', {
       method:'POST',
       body: formData
     });
