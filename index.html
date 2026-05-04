@@ -298,9 +298,11 @@ async function sendRFQ(){
   document.getElementById('sending').style.display='block';
 
   try {
+    const formData = new FormData();
+    formData.append('data', JSON.stringify({rfq, suppliers:sups}));
     const res = await fetch('https://script.google.com/macros/s/AKfycbzdcSJnIuiWInhz5SA91mbUlVaOymj4JCu3o0QWHVu13JhQPYEO2ErSSibufJpcr8uX/exec', {
       method:'POST',
-      body:JSON.stringify({rfq, suppliers:sups})
+      body: formData
     });
     const data = await res.json();
 
